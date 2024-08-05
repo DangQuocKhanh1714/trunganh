@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f2f2f2;
+        }
+        form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        input, button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 10px 20px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .social-login {
+            display: flex;
+            justify-content: space-between;
+        }
+        .social-login button {
+            width: 48%;
+        }
+    </style>
+</head>
+<body>
+    <form id="loginForm">
+        <h2>Đăng Nhập</h2>
+        <input type="text" id="username" placeholder="Số điện thoại hoặc Email" required>
+        <input type="password" id="password" placeholder="Mật khẩu" required>
+        <button type="submit">Đăng Nhập</button>
+        <div class="social-login">
+            <button type="button" id="googleLogin">Google</button>
+            <button type="button" id="facebookLogin">Facebook</button>
+        </div>
+    </form>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    fetch(`http://localhost:3000/users`)
+        .then(response => response.json())
+        .then(data => {
+            const user = data.find(user => user.contact === username && user.password === password);
+            if (user) {
+                alert('Đăng nhập thành công!');
+                sessionStorage.setItem('loggedInUser', JSON.stringify(user)); // Lưu thông tin người dùng vào sessionStorage
+                if (user.displayName) {
+                    window.location.href = 'chatroom.html'; // Chuyển đến trang chat room nếu đã có displayName
+                } else {
+                    window.location.href = 'setName.html'; // Chuyển đến trang đặt tên nếu chưa có displayName
+                }
+            } else {
+                alert('Tài khoản hoặc mật khẩu không đúng!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Đã xảy ra lỗi trong quá trình đăng nhập!');
+        });
+});
+
+document.getElementById('googleLogin').addEventListener('click', function() {
+    alert('Chức năng đăng nhập bằng Google chưa được triển khai.');
+});
+
+document.getElementById('facebookLogin').addEventListener('click', function() {
+    alert('Chức năng đăng nhập bằng Facebook chưa được triển khai.');
+});
+
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: #966a6a;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-grow: 1;
+        }
+        .left-panel {
+            width: 200px;
+            background-color: #f2f2f2;
+            padding: 10px;
+        }
+        .chat-panel {
+            flex-grow: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .messages {
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-bottom: 10px;
+        }
+        .input-message {
+            display: flex;
+        }
+        .input-message input {
+            flex-grow: 1;
+            padding: 5px;
+            margin-right: 5px;
+        }
+        .input-message button {
+            padding: 5px 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .input-message button:hover {
+            background-color: #555;
+        }
+        .room-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .room-list li {
+            margin-bottom: 5px;
+            cursor: context-menu;
+        }
+        #addRoom {
+            margin-top: 10px;
+        }
+        /* CSS cho overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .overlay-content input {
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 5px;
+        }
+        .overlay-content button {
+            padding: 5px 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .overlay-content button:hover {
+            background-color: #555;
+        }
+        .avatar {
+            display: flex;
+            align-items: center;
+        }
+        .avatar img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        /* CSS cho tab cửa sổ tiện ích */
+        .context-menu {
+            position: absolute;
+            display: none;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .context-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+        }
+        .context-menu button:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Chat Room</h1>
+    </header>
+    <div class="container">
+        <div class="left-panel">
+            <h2>Người dùng</h2>
+            <div class="avatar">
+                <img id="avatar" src="" alt="Avatar">
+                <p id="displayName"></p>
+            </div>
+            <h2>Phòng Chat</h2>
+            <ul class="room-list" id="roomList">
+                <!-- Danh sách các phòng chat sẽ được thêm vào đây -->
+            </ul>
+            <button id="addRoom">Thêm Phòng</button>
+        </div>
+        <div class="chat-panel">
+            <div class="messages" id="messages">
+                <!-- Tin nhắn sẽ được thêm vào đây -->
+            </div>
+            <div class="input-message">
+                <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
+                <button id="sendMessage">Gửi</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="overlay">
+        <div class="overlay-content">
+            <h2>Thêm Phòng</h2>
+            <input type="text" id="searchRoomInput" placeholder="Nhập tên phòng cần tìm...">
+            <button id="searchRoom">Tìm Phòng</button>
+            <input type="text" id="roomNameInput" placeholder="Nhập tên phòng mới...">
+            <button id="addNewRoom">Thêm Phòng</button>
+            <button id="cancelAddRoom">Hủy</button>
+        </div>
+    </div>
+    <div class="context-menu" id="contextMenu">
+        <button id="joinRoom">Vào Phòng</button>
+        <button id="deleteRoom">Xóa Phòng</button>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    const user = JSON.parse(sessionStorage.getItem('loggedInUser'));
+    if (user && user.displayName) {
+        document.getElementById('displayName').innerText = user.displayName;
+        if (user.avatar) {
+            document.getElementById('avatar').src = user.avatar;
+        }
+    }
+
+    // Tạo danh sách phòng chat từ json-server
+    fetch(`http://localhost:3000/users/${user.id}`)
+    .then(response => response.json())
+    .then(data => {
+        const rooms = data.rooms || [];
+        const roomList = document.getElementById('roomList');
+        rooms.forEach(room => {
+            const li = document.createElement('li');
+            li.textContent = room;
+            roomList.appendChild(li);
+        });
+    });
+
+    const overlay = document.getElementById('overlay');
+    const addRoomButton = document.getElementById('addRoom');
+    const contextMenu = document.getElementById('contextMenu');
+    let currentRoom = null;
+
+    // Khi người dùng nhấn nút "Thêm Phòng"
+    addRoomButton.addEventListener('click', function() {
+        overlay.style.display = 'flex'; // Hiển thị overlay
+    });
+
+    // Khi người dùng nhấn nút "Hủy"
+    document.getElementById('cancelAddRoom').addEventListener('click', function() {
+        overlay.style.display = 'none'; // Ẩn overlay
+    });
+
+    // Khi người dùng nhấn nút "Tìm Phòng" trong overlay
+    document.getElementById('searchRoom').addEventListener('click', function() {
+        const roomName = document.getElementById('searchRoomInput').value.trim();
+        if (roomName) {
+            alert(`Tìm kiếm phòng: ${roomName}`); // Thực hiện hành động tìm phòng
+        }
+    });
+
+    // Khi người dùng nhấn nút "Thêm Phòng" trong overlay
+    document.getElementById('addNewRoom').addEventListener('click', function() {
+        const roomName = document.getElementById('roomNameInput').value.trim();
+        if (roomName) {
+            const li = document.createElement('li');
+            li.textContent = roomName;
+            document.getElementById('roomList').appendChild(li);
+
+            // Cập nhật phòng mới vào json-server
+            user.rooms = user.rooms || [];
+            user.rooms.push(roomName);
+
+            fetch(`http://localhost:3000/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.json())
+            .then(data => {
+                sessionStorage.setItem('loggedInUser', JSON.stringify(data));
+                overlay.style.display = 'none'; // Ẩn overlay
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi thêm phòng.');
+            });
+        }
+    });
+
+    // Xử lý gửi tin nhắn
+    document.getElementById('sendMessage').addEventListener('click', function() {
+        const message = document.getElementById('messageInput').value.trim();
+        if (message) {
+            const p = document.createElement('p');
+            p.textContent = `${user.displayName}: ${message}`;
+            document.getElementById('messages').appendChild(p);
+            document.getElementById('messageInput').value = ''; // Xóa nội dung input sau khi gửi
+        }
+    });
+
+    // Xử lý sự kiện chuột phải vào phòng
+    document.getElementById('roomList').addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+        currentRoom = event.target;
+        contextMenu.style.top = `${event.clientY}px`;
+        contextMenu.style.left = `${event.clientX}px`;
+        contextMenu.style.display = 'block';
+    });
+
+    // Xử lý sự kiện nhấn vào nút "Vào Phòng"
+    document.getElementById('joinRoom').addEventListener('click', function() {
+        if (currentRoom) {
+            const roomName = currentRoom.textContent;
+            alert(`Vào phòng: ${roomName}`);
+            document.getElementById('messages').innerHTML = ''; // Xóa tin nhắn cũ khi vào phòng mới
+            contextMenu.style.display = 'none'; // Ẩn context menu
+        }
+    });
+
+    // Xử lý sự kiện nhấn vào nút "Xóa Phòng"
+    document.getElementById('deleteRoom').addEventListener('click', function() {
+    if (currentRoom) {
+        const roomName = currentRoom.textContent;
+        if (confirm(`Bạn có chắc chắn muốn xóa phòng ${roomName}?`)) {
+            // Xóa phòng khỏi danh sách
+            currentRoom.remove();
+
+            // Xóa tin nhắn trong phòng
+            const messages = document.getElementById('messages');
+            Array.from(messages.children).forEach(message => {
+                if (message.getAttribute('data-room') === roomName) {
+                    message.remove();
+                }
+            });
+
+            // Cập nhật lại danh sách phòng trong json-server
+            user.rooms = user.rooms.filter(room => room !== roomName);
+
+            fetch(`http://localhost:3000/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.json())
+            .then(data => {
+                sessionStorage.setItem('loggedInUser', JSON.stringify(data));
+                contextMenu.style.display = 'none'; // Ẩn context menu
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi xóa phòng.');
+            });
+        }
+    }
+});
+
+    // Ẩn context menu khi nhấn ra ngoài
+    document.addEventListener('click', function() {
+        contextMenu.style.display = 'none';
+    });
+});
+
+    </script>
+</body>
+</html>

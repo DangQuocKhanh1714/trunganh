@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f2f2f2;
+        }
+        form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        input, select, button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 10px 20px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <form id="registrationForm">
+        <h2>Đăng Ký</h2>
+        <input type="text" id="name" placeholder="Họ và Tên" required>
+        <input type="text" id="contact" placeholder="Số điện thoại hoặc Email" required>
+        <select id="gender" required>
+            <option value="">Giới tính</option>
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+            <option value="other">Khác</option>
+        </select>
+        <input type="date" id="dob" placeholder="Ngày/Tháng/Năm sinh" required>
+        <input type="password" id="password" placeholder="Mật khẩu" required>
+        <button type="submit">Đăng Ký</button>
+    </form>
+    <script>
+      document.getElementById('registrationForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const contact = document.getElementById('contact').value.trim();
+    const gender = document.getElementById('gender').value;
+    const dob = document.getElementById('dob').value;
+    const password = document.getElementById('password').value;
+
+    if (!isValidName(name)) {
+        alert('Họ và Tên không hợp lệ. Vui lòng nhập không dấu.');
+        return;
+    }
+
+    if (!isValidContact(contact)) {
+        alert('Số điện thoại hoặc Email không hợp lệ.');
+        return;
+    }
+
+    if (!isValidPassword(password)) {
+        alert('Mật khẩu phải chứa ít nhất 6 ký tự.');
+        return;
+    }
+
+    const user = {
+        name: name,
+        contact: contact,
+        gender: gender,
+        dob: dob,
+        password: password
+    };
+
+    fetch('http://localhost:3000/users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Đăng ký thành công!');
+        window.location.href = 'login.html'; // Chuyển đến trang đăng nhập
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Đăng ký thất bại!');
+    });
+});
+
+function isValidName(name) {
+    const namePattern = /^[A-Za-z\s]+$/; // Chỉ chấp nhận các ký tự không dấu và khoảng trắng
+    return namePattern.test(name);
+}
+
+function isValidContact(contact) {
+    const phonePattern = /^[0-9]{10,11}$/; // Số điện thoại từ 10-11 chữ số
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Email hợp lệ
+    return phonePattern.test(contact) || emailPattern.test(contact);
+}
+
+function isValidPassword(password) {
+    return password.length >= 6;
+}
+
+    </script>
+</body>
+</html>

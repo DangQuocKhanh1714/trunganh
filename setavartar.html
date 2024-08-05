@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn Ảnh Đại Diện</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f2f2f2;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Chọn Ảnh Đại Diện</h2>
+        <input type="file" id="avatarInput" accept="image/*">
+        <br>
+        <button id="saveAvatar">Lưu Ảnh Đại Diện</button>
+    </div>
+    <script>
+        document.getElementById('saveAvatar').addEventListener('click', function() {
+    const user = JSON.parse(sessionStorage.getItem('loggedInUser'));
+    const avatarInput = document.getElementById('avatarInput');
+    
+    if (avatarInput.files && avatarInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            user.avatar = e.target.result;
+
+            fetch(`http://localhost:3000/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Ảnh đại diện đã được cập nhật thành công!');
+                sessionStorage.setItem('loggedInUser', JSON.stringify(data)); // Cập nhật thông tin người dùng trong sessionStorage
+                window.location.href = 'welcome.html'; // Chuyển đến trang chào mừng
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi cập nhật ảnh đại diện.');
+            });
+        };
+        reader.readAsDataURL(avatarInput.files[0]);
+    } else {
+        alert('Vui lòng chọn một ảnh đại diện.');
+    }
+});
+
+    </script>
+</body>
+</html>
